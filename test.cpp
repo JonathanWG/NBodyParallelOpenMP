@@ -1,19 +1,32 @@
 #include <iostream>
 #include <omp.h>
 #include <stdio.h>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
 #include "nbody_parallel/nbody_parallel.hpp"
 
 using namespace std;
 using namespace NBODY;
 
 
+std::ifstream in_ifs;
+typedef struct unitTest{
+    int num_part;
+    int num_inter;
+    unitTest(int n1, int n2) {
+        num_part = n1;
+        num_inter = n2;
+    }
+} unitTest;
 
-int serial_test(NBody &nbdObj) {
+
+int serial_test(NBody &nbdObj,int npart,int cnt) { /* number of particles, number of times in loop */
     double time;
     Particle  * particles;   /* Particles */
     ParticleV * pv;          /* Particle velocity */
-    int         npart, i, j;
-    int         cnt;         /* number of times in loop */
+    int          i, j;
     double      sim_t;       /* Simulation time */
     int tmp;
     tmp = fscanf(stdin,"%d\n",&npart);
@@ -39,12 +52,11 @@ int serial_test(NBody &nbdObj) {
 
 
 
-int parallel_test(NBody &nbdObj) {
+int parallel_test(NBody &nbdObj,int npart,int cnt) { /* number of particles, number of times in loop */
     double time;
     Particle  * particles;   /* Particles */
     ParticleV * pv;          /* Particle velocity */
-    int         npart, i, j;
-    int         cnt;         /* number of times in loop */
+    int i, j;
     double      sim_t;       /* Simulation time */
     int tmp;
     tmp = fscanf(stdin,"%d\n",&npart);
@@ -73,8 +85,30 @@ int main()
 {
     NBody nbdObj;
 
-    serial_test(nbdObj);
+    in_ifs.open("nbody.in",std::ifstream::in);
+    if(!in_ifs){
+        cout << "Error while trying read nbody.in file." << endl;
+        return 0;
+    }
 
-    parallel_test(nbdObj);
+    std::string line;
+    int test_counter = 0;
+    std::vector<unitTest> tests_vect;
+
+    while (std::getline(in_ifs, line))
+    {
+        cout << "Reading .in line " << test_counter << endl;
+        std::istringstream iss(line);
+        int n_part, n_inter;
+        if (!(iss >> n_part >> n_inter)) { break; } // error
+        tests_vect.push_back(unitTest(n_part,n_inter));
+        cout << "n_part << " << n_part <<  "  |  n_part <<  " << n_part  << endl;
+        test_counter++;
+    }
+
+
+    serial_test(nbdObj,tests_vect.at(0).num_part,tests_vect.at(0).num_inter);
+
+    parallel_test(nbdObj,tests_vect.at(0).num_part,tests_vect.at(0).num_inter);
 
 }
